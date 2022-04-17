@@ -43,6 +43,46 @@ locationsRouter.post('/', async (req, res) => {
     }
 });
 
+locationsRouter.get('/', async (req, res) => { 
+    const { city, uf, items } = req.query;
+
+    const parsedItems = <any> String(items).split(',').map(item => Number(item.trim()));
+
+
+    const locations = await knex('locations')
+        .join('location_items', 'locations.id', '=', 'location_items.location_id')
+        .whereIn('location_items.item_id', parsedItems)
+        .where('city', String(city))
+        .where('uf', String(uf))
+        .distinct()
+        .select('locations.*');
+
+
+    return res.json(locations);
+})
+
+locationsRouter.get('/:id', async (req, res) => {
+    const { id } = req.params;
+
+    const location = await knex('locations').where('id', id).first();
+
+    if (!location){
+        return res.status(400).json({ message: "Location not found!" })
+    }
+
+    const items = await knex('items')
+        .join('location_items', 'items.id', '=', 'location_items.item_id')
+        .where('location_items.location_id', id)
+        .select('items.title');
+
+
+    return res.json({
+        location,
+        items
+    });
+})
+
+
 
 export default locationsRouter;
 
