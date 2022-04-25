@@ -1,8 +1,17 @@
 import express from 'express';
+import cors from 'cors';
 import path from 'path';
 import routes from './routes';
 
+
 const app = express();
+
+//em ambiente de produção
+// app.use(cors({
+//     origin: ['dominio.com.br', 'outro.com.br']
+// }));
+         
+app.use(cors());
 
 app.use(express.json());
 

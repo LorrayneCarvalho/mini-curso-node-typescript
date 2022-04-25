@@ -1,8 +1,11 @@
-import { Router } from "express";
+import { response, Router } from "express";
+import multer from "multer";
 import knex from "../database/connection";
-
+import multerConfig from '../config/multer';
 
 const locationsRouter = Router();
+
+const upload = multer(multerConfig);
 
 locationsRouter.post('/', async (req, res) => {
     try{
@@ -48,7 +51,6 @@ locationsRouter.get('/', async (req, res) => {
 
     const parsedItems = <any> String(items).split(',').map(item => Number(item.trim()));
 
-
     const locations = await knex('locations')
         .join('location_items', 'locations.id', '=', 'location_items.location_id')
         .whereIn('location_items.item_id', parsedItems)
@@ -59,7 +61,7 @@ locationsRouter.get('/', async (req, res) => {
 
 
     return res.json(locations);
-})
+});
 
 locationsRouter.get('/:id', async (req, res) => {
     const { id } = req.params;
@@ -80,8 +82,26 @@ locationsRouter.get('/:id', async (req, res) => {
         location,
         items
     });
-})
+});
 
+locationsRouter.put('/:id', upload.single("image"), async (req, res) => {
+    const { id } = req.params;
+    const image = req.file?.filename;
+
+    const location = await knex('locations').where('id', id).first();
+
+    if(!location){
+        return response.status(400).json({
+            message: "Location not found."
+        });
+    }
+
+    const locationUpdate = { ...location, image }
+
+    await knex('locations').update(locationUpdate).where('id', id);
+
+    return res.json(locationUpdate);
+});
 
 
 export default locationsRouter;
